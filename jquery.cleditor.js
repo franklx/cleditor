@@ -1,10 +1,12 @@
 ﻿/**
- @preserve CLEditor WYSIWYG HTML Editor v1.3.0
+ @preserve CLEditor WYSIWYG HTML Editor v1.3.1
  http://premiumsoftware.net/cleditor
  requires jQuery v1.4.2 or later
 
  Copyright 2010, Chris Landowski, Premium Software, LLC
  Dual licensed under the MIT or GPL Version 2 licenses.
+
+ Smart Toolbar function by franklx
 */
 
 // ==ClosureCompiler==
@@ -224,6 +226,15 @@
       .addClass(GROUP_CLASS)
       .appendTo($toolbar);
     
+    // Trigger form change event on initialization
+    var $form = $area.parents("form");
+    if ($form) {
+        $(this).change(function() {
+            $form.change();
+        });
+    }
+    editor.$tb_timeout = null;
+
     // Add the buttons to the toolbar
     $.each(options.controls.split(" "), function(idx, buttonName) {
       if (buttonName === "") return true;
@@ -249,21 +260,15 @@
         // Get the button definition
         var button = buttons[buttonName];
 
-        // Add a new button to the group
-        var $buttonDiv = $(DIV_TAG)
+        // autohide: Embed span in button div
+        var $buttonDiv = $("<div class='btn' title='" + button.title + "'>" +
+                           "<span class='tb-img' style='background-position:" + button.stripIndex * -24 + "px;'>" + 
+                           "</span>" +
+                           "</div>")
           .data(BUTTON_NAME, button.name)
           .addClass(BUTTON_CLASS)
-          .attr("title", button.title)
           .bind(CLICK, $.proxy(buttonClick, editor))
-          .appendTo($group)
-          .hover(hoverEnter, hoverLeave);
-
-        // Prepare the button image
-        var map = {};
-        if (button.css) map = button.css;
-        else if (button.image) map.backgroundImage = imageUrl(button.image);
-        if (button.stripIndex) map.backgroundPosition = button.stripIndex * -24;
-        $buttonDiv.css(map);
+          .appendTo($group);
 
         // Add the unselectable attribute for ie
         if (ie)
@@ -285,8 +290,15 @@
     // Bind the document click event handler
     if (!documentClickAssigned) {
       $(document).click(function(e) {
-        // Dismiss all non-prompt popups
         var $target = $(e.target);
+        // Hide toolbars
+        $.each(popups, function(idx, popup) {
+            if ($(popup).is(":visible")) {
+                hideToolbar(editor);
+                return false;
+            }
+        });
+        // Dismiss all non-prompt popups
         if (!$target.add($target.parents()).is("." + PROMPT_CLASS))
           hidePopups();
       });
@@ -352,7 +364,7 @@
   function buttonClick(e) {
 
     var editor = this,
-        buttonDiv = e.target,
+        buttonDiv = e.target.parentNode,
         buttonName = $.data(buttonDiv, BUTTON_NAME),
         button = buttons[buttonName],
         popupName = button.popupName,
@@ -370,7 +382,8 @@
       popup: popup,
       popupName: popupName,
       command: button.command,
-      useCSS: editor.options.useCSS
+      useCSS: editor.options.useCSS,
+      smartToolbar: editor.options.smartToolbar
     };
 
     if (button.buttonClick && button.buttonClick(e, data) === false)
@@ -513,7 +526,8 @@
         button = buttons[buttonName],
         command = button.command,
         value,
-        useCSS = editor.options.useCSS;
+        useCSS = editor.options.useCSS,
+        smartToolbar = editor.options.smartToolbar;
 
     // Get the command value
     if (buttonName == "font")
@@ -543,7 +557,8 @@
       popupName: button.popupName,
       command: command,
       value: value,
-      useCSS: useCSS
+      useCSS: useCSS,
+      smartToolbar: smartToolbar
     };
 
     if (button.popupClick && button.popupClick(e, data) === false)
@@ -780,6 +795,28 @@
     });
   }
 
+  // showToolbar - show toolbar with animation
+  function showToolbar(editor) {
+    if (!editor.options.smartToolbar) return;
+    if (editor.$tb_timeout) clearTimeout(editor.$tb_timeout);
+    if (!editor.$toolbar.is(":visible")) {
+      var hgt = editor.$frame.height() - editor.$toolbar.outerHeight();
+      editor.$frame.height(hgt);
+      editor.$toolbar.slideDown("fast");
+    }
+  }
+
+  // hideToolbar - hide toolbar with animation
+  function hideToolbar(editor) {
+    if (!editor.options.smartToolbar) return;
+    editor.$tb_timeout = setTimeout(function() {
+      if (!editor.$frame.is(":focus")) editor.$toolbar.slideUp("fast", function() {
+        var hgt = editor.$frame.height() + editor.$toolbar.outerHeight();
+        editor.$frame.height(hgt);
+      });
+    }, 1e3);
+  }
+
   // imagesPath - returns the path to the images folder
   function imagesPath() {
     var cssFile = "jquery.cleditor.css",
@@ -870,7 +907,10 @@
 
     // Update the textarea when the iframe loses focus
     ($.browser.mozilla ? $doc : $(contentWindow)).blur(function() {
+      hideToolbar(editor);
       updateTextArea(editor, true);
+    }).focus(function() {
+      showToolbar(editor);
     });
 
     // Enable the toolbar buttons as the user types or clicks
@@ -894,6 +934,12 @@
       // Resize the toolbar
       var hgt = $group.offset().top + $group.outerHeight() - $toolbar.offset().top + 1;
       $toolbar.height(hgt);
+
+      // Autohide the toolbar
+      if (editor.options.smarttoolbar) {
+        $toolbar.hide();
+        hgt = 0;
+      }
 
       // Resize the iframe
       hgt = (/%/.test("" + options.height) ? $main.height() : parseInt(options.height)) - hgt;
@@ -947,7 +993,8 @@
           popup: popups[button.popupName],
           popupName: button.popupName,
           command: button.command,
-          useCSS: editor.options.useCSS
+          useCSS: editor.options.useCSS,
+          smartToolbar: editor.options.smartToolbar
         };
         enabled = button.getEnabled(data);
         if (enabled === undefined)
@@ -1053,6 +1100,7 @@
     // Focus the first input element if any
     setTimeout(function() {
       $popup.find(":text,textarea").eq(0).focus().select();
+      showToolbar(editor);
     }, 100);
 
   }
