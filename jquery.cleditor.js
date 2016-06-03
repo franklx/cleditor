@@ -1,5 +1,5 @@
 ﻿/*!
- CLEditor WYSIWYG HTML Editor v1.4.2
+ CLEditor WYSIWYG HTML Editor v1.4.3
  http://premiumsoftware.net/CLEditor
  requires jQuery v1.4.2 or later
 
@@ -104,7 +104,7 @@
 
     // Loop through all matching textareas and create the editors
     this.each(function(idx, elem) {
-      if (elem.tagName == "TEXTAREA") {
+      if (elem.tagName.toUpperCase() == "TEXTAREA") {
         var data = $.data(elem, CLEDITOR);
         if (!data) data = new cleditor(elem, options);
         $result = $result.add(data);
@@ -528,7 +528,7 @@
       // Opera returns the fontfamily wrapped in quotes
       value = target.style.fontFamily.replace(/"/g, "");
     else if (buttonName == "size") {
-      if (target.tagName == "DIV")
+      if (target.tagName.toUpperCase() == "DIV")
         target = target.children[0];
       value = target.innerHTML;
     }
@@ -818,7 +818,7 @@
       editor.$frame.remove();
 
     // Create a new iframe
-    var $frame = editor.$frame = $('<iframe frameborder="0" src="javascript:true;">')
+    var $frame = editor.$frame = $('<iframe frameborder="0" src="javascript:true;" />')
       .hide()
       .appendTo($main);
 
