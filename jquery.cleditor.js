@@ -1,13 +1,13 @@
 ﻿/*!
- CLEditor WYSIWYG HTML Editor v1.4.0
- http://premiumsoftware.net/cleditor
+ CLEditor WYSIWYG HTML Editor v1.4.1
+ http://premiumsoftware.net/CLEditor
  requires jQuery v1.4.2 or later
 
  Copyright 2010, Chris Landowski, Premium Software, LLC
  Dual licensed under the MIT or GPL Version 2 licenses.
 */
 
-(function($) {
+(function ($) {
 
   //==============
   // jQuery Plugin
@@ -152,7 +152,6 @@
   ie = /msie/.test(ua),
   ie6 = /msie\s6/.test(ua),
   webkit = /webkit/.test(ua),
-  mozilla = ua.indexOf("compatible") < 0 && /mozilla/.test(ua),
 
   // Test for iPhone/iTouch/iPad
   iOS = /iphone|ipad|ipod/i.test(ua),
@@ -304,7 +303,7 @@
 
     // Bind the window resize event when the width or height is auto or %
     if (/auto|%/.test("" + options.width + options.height))
-      $(window).resize(function() {refresh(editor);});
+      $(window).bind('resize.cleditor', function () { refresh(editor); });
 
     // Create the iframe and resize the controls
     refresh(editor);
@@ -719,12 +718,12 @@
     }
 
     // Execute the command and check for error
-    var success = true, description;
+    var success = true, message;
     if (ie && command.toLowerCase() == "inserthtml")
       getRange(editor).pasteHTML(value);
     else {
       try { success = editor.doc.execCommand(command, 0, value || null); }
-      catch (err) { description = err.description; success = false; }
+      catch (err) { message = err.message; success = false; }
       if (!success) {
         if ("cutcopypaste".indexOf(command) > -1)
           showMessage(editor, "For security reasons, your browser does not support the " +
@@ -732,13 +731,14 @@
             button);
         else
           showMessage(editor,
-            (description ? description : "Error executing the " + command + " command."),
+            (message ? message : "Error executing the " + command + " command."),
             button);
       }
     }
 
-    // Enable the buttons
+    // Enable the buttons and update the textarea
     refreshButtons(editor);
+    updateTextArea(editor, true);
     return success;
 
   }
@@ -884,15 +884,11 @@
 
     }
 
-    // Update the textarea when the iframe loses focus
-    (mozilla ? $doc : $(contentWindow)).blur(function() {
-      updateTextArea(editor, true);
-    });
-
-    // Enable the toolbar buttons as the user types or clicks
+    // Enable the toolbar buttons and update the textarea as the user types or clicks
     $doc.click(hidePopups)
       .bind("keyup mouseup", function() {
         refreshButtons(editor);
+        updateTextArea(editor, true);
       });
 
     // Show the textarea for iPhone/iTouch/iPad or
