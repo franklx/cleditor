@@ -54,7 +54,8 @@
       docCSSFile:   // CSS file used to style the document contained within the editor
                     "", 
       bodyStyle:    // style to assign to document body contained within the editor
-                    "margin:4px; font:10pt Arial,Verdana; cursor:text"
+                    "margin:4px; font:10pt Arial,Verdana; cursor:text",
+      smartToolbar: true, // enable smart-toolbar
     },
 
     // Define all usable toolbar buttons - the init string property is 
