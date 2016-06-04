@@ -26,7 +26,8 @@
   "copyright": "2014 Chris Landowski",
   "main": [
     "./jquery.cleditor.js",
-    "./jquery.cleditor.css"
+    "./jquery.cleditor.css",
+    "./images/*.gif"
   ],
   "ignore": [
     "*",

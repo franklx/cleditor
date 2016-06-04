@@ -1,10 +1,12 @@
 ﻿/*!
- CLEditor WYSIWYG HTML Editor v1.4.5
+ CLEditor WYSIWYG HTML Editor v1.4.5.1
  http://premiumsoftware.net/CLEditor
  requires jQuery v1.4.2 or later
 
  Copyright 2010, Chris Landowski, Premium Software, LLC
  Dual licensed under the MIT or GPL Version 2 licenses.
+
+ Smart Toolbar function by franklx (ported from 1.3.1)
 */
 
 (function ($) {
@@ -47,11 +49,12 @@
             docCSSFile:   // CSS file used to style the document contained within the editor
                           "",
             bodyStyle:    // style to assign to document body contained within the editor
-                          "margin:4px; font:10pt Arial,Verdana; cursor:text"
+                          "margin:4px; font:10pt Arial,Verdana; cursor:text",
+            smartToolbar: true // enable smart-toolbar
         },
 
-        // Define all usable toolbar buttons - the init string property is 
-        //   expanded during initialization back into the buttons object and 
+        // Define all usable toolbar buttons - the init string property is
+        //   expanded during initialization back into the buttons object and
         //   separate object properties are created for each button.
         //   e.g. buttons.size.title = "Font Size"
         buttons: {
@@ -90,9 +93,6 @@
             "print,,|" +
             "source,Show Source"
         },
-
-        // imagesPath - returns the path to the images folder
-        imagesPath: function () { return imagesPath(); }
 
     };
 
@@ -148,6 +148,7 @@
     COLOR_CLASS = "cleditorColor",   // color popup div inside body
     PROMPT_CLASS = "cleditorPrompt",  // prompt popup divs inside body
     MSG_CLASS = "cleditorMsg",     // message popup div inside body
+    TOOLIMG_CLASS = "cleditorToolImg", // toolbar image
 
     // Browser detection
     ua = navigator.userAgent.toLowerCase(),
@@ -225,6 +226,15 @@
             .addClass(GROUP_CLASS)
             .appendTo($toolbar);
 
+        // Trigger form change event on initialization
+        var $form = $area.parents("form");
+        if ($form) {
+            $(this).change(function() {
+                $form.change();
+            });
+        }
+        editor.$tb_timeout = null;
+
         // Initialize the group width
         var groupWidth = 0;
 
@@ -260,22 +270,22 @@
                 // Add a new button to the group
                 var $buttonDiv = $(DIV_TAG)
                     .data(BUTTON_NAME, button.name)
+                    .addClass('btn') // bootstrap button class
                     .addClass(BUTTON_CLASS)
                     .attr("title", button.title)
                     .bind(CLICK, $.proxy(buttonClick, editor))
                     .appendTo($group)
                     .hover(hoverEnter, hoverLeave);
 
+                // Button icon container (bootstrap workaround)
+                var $buttonSpan = $('<span>')
+                    .addClass(TOOLIMG_CLASS)
+                    .css('backgroundPosition', button.stripIndex * -24)
+                    .appendTo($buttonDiv);
+
                 // Update the group width
                 groupWidth += 24;
                 $group.width(groupWidth + 1);
-
-                // Prepare the button image
-                var map = {};
-                if (button.css) map = button.css;
-                else if (button.image) map.backgroundImage = imageUrl(button.image);
-                if (button.stripIndex) map.backgroundPosition = button.stripIndex * -24;
-                $buttonDiv.css(map);
 
                 // Add the unselectable attribute for ie
                 if (ie)
@@ -297,6 +307,13 @@
         // Bind the document click event handler
         if (!documentClickAssigned) {
             $(document).click(function (e) {
+                // Hide toolbars
+                $.each(popups, function(idx, popup) {
+                    if ($(popup).is(":visible")) {
+                        hideToolbar(editor);
+                        return false;
+                    }
+                });
                 // Dismiss all non-prompt popups
                 var $target = $(e.target);
                 if (!$target.add($target.parents()).is("." + PROMPT_CLASS))
@@ -376,7 +393,7 @@
     function buttonClick(e) {
 
         var editor = this,
-            buttonDiv = e.target,
+            buttonDiv = e.target.parentNode,
             buttonName = $.data(buttonDiv, BUTTON_NAME),
             button = buttons[buttonName],
             popupName = button.popupName,
@@ -394,7 +411,8 @@
             popup: popup,
             popupName: popupName,
             command: button.command,
-            useCSS: editor.options.useCSS
+            useCSS: editor.options.useCSS,
+            smartToolbar: editor.options.smartToolbar
         };
 
         if (button.buttonClick && button.buttonClick(e, data) === false)
@@ -402,7 +420,7 @@
 
         // Toggle source
         if (buttonName === "source") {
-            
+
             // Show the iframe
             if (sourceMode(editor)) {
                 delete editor.range;
@@ -533,7 +551,8 @@
             button = buttons[buttonName],
             command = button.command,
             value,
-            useCSS = editor.options.useCSS;
+            useCSS = editor.options.useCSS,
+            smartToolbar = editor.options.smartToolbar;
 
         // Get the command value
         if (buttonName === "font")
@@ -563,7 +582,8 @@
             popupName: button.popupName,
             command: command,
             value: value,
-            useCSS: useCSS
+            useCSS: useCSS,
+            smartToolbar: smartToolbar
         };
 
         if (button.popupClick && button.popupClick(e, data) === false)
@@ -741,7 +761,6 @@
             selection.removeAllRanges();
             selection.addRange(range);
         }
-        
         else {
             var success = true, message;
             try { success = editor.doc.execCommand(command, 0, value || null); }
@@ -818,15 +837,26 @@
         });
     }
 
-    // imagesPath - returns the path to the images folder
-    function imagesPath() {
-        var href = $("link[href*=cleditor]").attr("href");
-        return href.replace(/^(.*\/)[^\/]+$/, '$1') + "images/";
+    // showToolbar - show toolbar with animation
+    function showToolbar(editor) {
+        if (!editor.options.smartToolbar) return;
+        if (editor.$tb_timeout) clearTimeout(editor.$tb_timeout);
+        if (!editor.$toolbar.is(":visible")) {
+            var hgt = editor.$frame.height() - editor.$toolbar.outerHeight();
+            editor.$frame.height(hgt);
+            editor.$toolbar.slideDown("fast");
+        }
     }
 
-    // imageUrl - Returns the css url string for a filemane
-    function imageUrl(filename) {
-        return "url(" + imagesPath() + filename + ")";
+    // hideToolbar - hide toolbar with animation
+    function hideToolbar(editor) {
+        if (!editor.options.smartToolbar) return;
+        editor.$tb_timeout = setTimeout(function() {
+            if (!editor.$frame.is(":focus")) editor.$toolbar.slideUp("fast", function() {
+                var hgt = editor.$frame.height() + editor.$toolbar.outerHeight();
+                editor.$frame.height(hgt);
+            });
+        }, 1e3);
     }
 
     // refresh - creates the iframe and resizes the controls
@@ -901,11 +931,13 @@
             // Restore the text range and trigger focused event when the iframe gains focus
             $frame.focus(function () {
                 restoreRange(editor);
+                showToolbar(editor);
                 $(editor).triggerHandler(FOCUSED);
             });
 
             // Trigger blurred event when the iframe looses focus
             $frame.blur(function () {
+                hideToolbar(editor);
                 $(editor).triggerHandler(BLURRED);
             });
 
@@ -914,14 +946,20 @@
         // Trigger focused and blurred events for all other browsers
         else {
             $($frame[0].contentWindow)
-                .focus(function () { $(editor).triggerHandler(FOCUSED); })
-                .blur(function () { $(editor).triggerHandler(BLURRED); });
+                .focus(function () {
+                    showToolbar(editor);
+                    $(editor).triggerHandler(FOCUSED);
+                })
+                .blur(function () {
+                    hideToolbar(editor);
+                    $(editor).triggerHandler(BLURRED);
+                });
         }
 
         // Enable the toolbar buttons and update the textarea as the user types or clicks
         $doc.click(hidePopups)
             .keydown(function (e) {
-                // Prevent Internet Explorer from going to prior page when an image 
+                // Prevent Internet Explorer from going to prior page when an image
                 // is selected and the backspace key is pressed.
                 if (ie && getSelection(editor).type == "Control" && e.keyCode == 8) {
                     getSelection(editor).clear();
@@ -948,6 +986,12 @@
             // Resize the toolbar
             var hgt = $group.offset().top + $group.outerHeight() - $toolbar.offset().top + 1;
             $toolbar.height(hgt);
+
+            // Autohide the toolbar
+            if (editor.options.smartToolbar) {
+                $toolbar.hide();
+                hgt = 0;
+            }
 
             // Resize the iframe
             hgt = (/%/.test("" + options.height) ? $main.height() : parseInt(options.height, 10)) - hgt;
@@ -1001,7 +1045,8 @@
                     popup: popups[button.popupName],
                     popupName: button.popupName,
                     command: button.command,
-                    useCSS: editor.options.useCSS
+                    useCSS: editor.options.useCSS,
+                    smartToolbar: editor.options.smartToolbar
                 };
                 enabled = button.getEnabled(data);
                 if (enabled === undefined)
@@ -1111,6 +1156,7 @@
         // Focus the first input element if any
         setTimeout(function () {
             $popup.find(":text,textarea").eq(0).focus().select();
+            showToolbar(editor);
         }, 100);
 
     }
