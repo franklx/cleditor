@@ -1,5 +1,5 @@
 ﻿/*!
- CLEditor WYSIWYG HTML Editor v1.4.105
+ CLEditor WYSIWYG HTML Editor v1.4.501
  http://premiumsoftware.net/CLEditor
  requires jQuery v1.4.2 or later
 

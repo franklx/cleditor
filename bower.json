@@ -1,6 +1,6 @@
 {
   "name": "cleditor",
-  "version": "1.4.105",
+  "version": "1.4.501",
   "dependencies": {
     "jquery": "^2.0.0"
   },
