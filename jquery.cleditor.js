@@ -937,7 +937,7 @@
       $toolbar.height(hgt);
 
       // Autohide the toolbar
-      if (editor.options.smarttoolbar) {
+      if (editor.options.smartToolbar) {
         $toolbar.hide();
         hgt = 0;
       }
