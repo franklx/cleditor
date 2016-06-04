@@ -4,36 +4,27 @@
   "dependencies": {
     "jquery": "^2.0.0"
   },
-  "title": "CLEditor",
-  "description": "CLEditor is an open source jQuery plug-in which provides a lightweight, full featured, cross browser, extensible, WYSIWYG HTML editor that can be easily added into any web site.",
+  "homepage": "https://github.com/franklx/cleditor",
+  "authors": [
+    "Chris Landowski",
+    "franklx <flucchini@gmail.com>"
+  ],
+  "description": "CLEditor is an open source jQuery plug-in which provides a lightweight, full featured, cross browser, extensible, WYSIWYG HTML editor",
+  "main": [
+    "jquery.cleditor.js",
+    "jquery.cleditor.css"
+  ],
   "keywords": [
     "editor",
     "textarea",
     "wysiwyg"
   ],
-  "homepage": "http://premiumsoftware.net/cleditor/",
-  "licenses": [
-    {
-      "type": "MIT"
-    },
-    {
-      "type": "GPL"
-    }
-  ],
-  "author": {
-    "name": "Chris Landowski",
-  },
-  "copyright": "2014 Chris Landowski",
-  "main": [
-    "./jquery.cleditor.js",
-    "./jquery.cleditor.css",
-    "./images/*.gif"
-  ],
+  "license": "MIT GPL",
   "ignore": [
-    "*",
     "**/.*",
-    "!/*.js",
-    "!/*.css",
-    "!/bower.json"
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
   ]
 }
