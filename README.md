@@ -12,7 +12,7 @@ http://premiumsoftware.net/cleditor/
 
 This repository is in sync with the zip files available on the official site.
 
-Revisions dubbed X.X.X.Y add following features:
+Revisions dubbed X.X.1XX add following features:
 
 * Bootstrap compatibility (buttons);
 * Button images using CSS (instead of imagesPath/imageUrl);
