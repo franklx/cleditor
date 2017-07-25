@@ -235,9 +235,6 @@
         }
         editor.$tb_timeout = null;
 
-        // Initialize the group width
-        var groupWidth = 0;
-
         // Add the buttons to the toolbar
         $.each(options.controls.split(" "), function (idx, buttonName) {
             if (buttonName === "") return true;
@@ -249,10 +246,6 @@
                 var $div = $(DIV_TAG)
                     .addClass(DIVIDER_CLASS)
                     .appendTo($group);
-
-                // Update the group width
-                $group.width(groupWidth + 1);
-                groupWidth = 0;
 
                 // Create a new group
                 $group = $(DIV_TAG)
@@ -282,10 +275,6 @@
                     .addClass(TOOLIMG_CLASS)
                     .css('backgroundPosition', button.stripIndex * -24)
                     .appendTo($buttonDiv);
-
-                // Update the group width
-                groupWidth += 24;
-                $group.width(groupWidth + 1);
 
                 // Add the unselectable attribute for ie
                 if (ie)
